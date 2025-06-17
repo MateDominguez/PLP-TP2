@@ -10,28 +10,53 @@ sublista(D, T, L, R) :-
     length(R, T),               % El resultado R tiene que tener longitud L.
     append(R, _, Sufijo).       % R + un resto forman el sufijo.
 
+/*
+% Ejercicio 12: Reversibilidad
+% sublista(-Descartm, +Tomar, +L, +R)
+
+Casos:
+
+* Ninguna solucion
+sublista(D, 2, [a,b,c,d,e,f], [g]).
+se cuelga
+
+* Una solucion
+sublista(D, 1, [a,b,c,d,e,f], [a]).
+D = 0; 
+se cuelga
+
+* Multiples soluciones
+sublista(D, 1, [a,a,c,d,e,f], [a]).
+D = 0;
+D = 1;
+se cuelga
+*/
+
 % Ejercicio 2: Tablero
 %! tablero(+K, -T)
 tablero(K, [A,B,C,D,E]) :-
+    K > 0,
     length(A, K),
     length(B, K),
     length(C, K),
     length(D, K),
     length(E, K).
     
+
 % Ejercicio 3: Tamaño
-% tamano(+M, -F, -C)
+%! tamano(+M, -F, -C)
 tamano([H|T], F, C) :-
     length([H|T], F),
     length(H, C).
     
+
 % Ejercicio 4: Coordenadas
-% coordenadas(+T, -IJ)
+%! coordenadas(+T, -IJ)
 coordenadas(T, (I, J)) :-
     tamano(T, F, C),
-    between(1, C, I),
-    between(1, F, J).
-    
+    between(1, C, J),
+    between(1, F, I).
+
 
 % Ejercicio 5: K-Piezas
 % kPiezas(+K, -PS)
@@ -107,6 +132,8 @@ ubicarPiezas(Tablero, Poda, [ID|IDs]):-
 
 % poda(+Poda, +Tablero)
 poda(sinPoda, _).
+poda(podaMod5, T):- todosGruposLibresModulo5(T).
+
 
 % Ejericio 9: Llenar Tablero
 % llenarTablero(+Poda, +Columnas, -Tablero)
@@ -120,3 +147,60 @@ llenarTablero(Poda, Columnas, Tablero):-
 cantSoluciones(Poda, Columnas, N) :-
     findall(T, llenarTablero(Poda, Columnas, T), TS),
     length(TS, N).
+
+/* 
+Mediciones
+
+K=3
+?- time(cantSoluciones(sinPoda, 3, N)).
+% 16,027,736 inferences, 0.902 CPU in 0.903 seconds (100% CPU, 17761550 Lips)
+N = 28.
+
+K=4
+?- time(cantSoluciones(sinPoda, 4, N)).
+% 764,343,781 inferences, 40.355 CPU in 40.360 seconds (100% CPU, 18940347 Lips)
+N = 200. 
+
+K=5
+?- time(cantSoluciones(sinPoda, 5, N)).
+% 21,229,838,177 inferences, 1129.442 CPU in 1129.582 seconds (100% CPU, 18796756 Lips)
+N = 856.
+*/
+
+% Ejercicio 11: Optimizacion
+
+% todosGruposLibresModulo5(+Tablero)
+todosGruposLibresModulo5(Tablero):-
+    findall(IJ, (coordenadas(Tablero, IJ), casillaLibre(IJ, Tablero)), Coordenadas),
+    agrupar(Coordenadas, Grupos),
+    forall(member(Grupo, Grupos), tamanoMod5(Grupo)).
+
+% casillaLibre(+IJ, +Tablero)
+casillaLibre((I, J), Tablero):-
+    nth1(I, Tablero, Fila),
+    nth1(J, Fila, Casilla),
+    var(Casilla).
+
+% tamanoMod5(Grupo)
+tamanoMod5(Grupo):-
+    length(Grupo, L),
+    L mod 5 =:= 0.
+
+/*
+Mediciones
+
+K=3
+?- time(cantSoluciones(podaMod5, 3, N)).
+% 9,460,374 inferences, 0.540 CPU in 0.540 seconds (100% CPU, 17508380 Lips)
+N = 28.
+
+K=4
+?- time(cantSoluciones(podaMod5, 4, N)).
+% 236,334,478 inferences, 13.131 CPU in 13.132 seconds (100% CPU, 17997733 Lips)
+N = 200.
+
+K=5
+?- time(cantSoluciones(podaMod5, 5, N)).
+% 3,846,191,964 inferences, 216.940 CPU in 216.961 seconds (100% CPU, 17729271 Lips)
+N = 856.
+*/

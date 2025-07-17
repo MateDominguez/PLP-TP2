@@ -12,24 +12,29 @@ sublista(D, T, L, R) :-
 
 /*
 % Ejercicio 12: Reversibilidad
-% sublista(-Descartm, +Tomar, +L, +R)
+% sublista(-Descartar, +Tomar, +L, +R)
 
-Casos:
+El predicado sublista/4 no es reversible en Descartar, es decir,
+no funciona cuando Descartar no esta instanciada.
+El predicado si es reversible en R.
 
-* Ninguna solucion
-sublista(D, 2, [a,b,c,d,e,f], [g]).
-se cuelga
+El problema esta en que en el predicado length(Prefijo, D),
+ni Prefijo ni D estan instanciadas, por lo que length nos 
+termina generando una cantidad infinita de instanciaciones 
+para Prefijo y D, de la forma [_1,...,_n] ,n.
 
-* Una solucion
-sublista(D, 1, [a,b,c,d,e,f], [a]).
-D = 0; 
-se cuelga
+A partir del momento en que Prefijo supera la longitud de L,
+todos los intentos de unificacion posteriores de append(Prefijo, Sufijo, L) 
+fallan. Luego, como seguimos generando una cantidad infinita de Prefijos
+que no unifican el programa se cuelga.
 
-* Multiples soluciones
-sublista(D, 1, [a,a,c,d,e,f], [a]).
-D = 0;
-D = 1;
-se cuelga
+El problema no depende de la instanciacion de R, si no de que D no lo esta
+y termina creando un generador infinito. Para que fuera reversible, se deberia
+acotar la longitud maxima de Descartar.
+
+Con la instanciacion sublista(+Descartar, +Tomar, +L, +R) el predicado
+responde true o false correctamente si R es el resultado de Tomar y Descartar
+tantos elementos como se indica de L.
 */
 
 % Ejercicio 2: Tablero
@@ -65,15 +70,21 @@ kPiezas(K, XS) :-
     kPiezasAux(K, XS, P).
 
 % kPiezasAux(+K, -PS, +PRestantes)
-kPiezasAux(0,[], _). % Caso base K == 0
-kPiezasAux(K, [P|XS], [P|PS]) :- % Caso recursivo, elijo la pieza
+
+% Caso base K == 0
+kPiezasAux(0,[], _). 
+
+% Caso recursivo, elijo la pieza
+kPiezasAux(K, [P|XS], [P|PS]) :- 
     Km1 is K - 1,
     length(XS, Km1),
-    length(PS, LPS), % Poda si no quedan sifientes piezas
+    length(PS, LPS), % Poda si no quedan suficientes piezas
     LPS >= Km1,
     kPiezasAux(Km1, XS, PS).
-kPiezasAux(K, [X|XS], [_|PS]) :- % Caso recursivo, NO elijo la pieza
-    length(PS, LPS), % Poda si no quedan sifientes piezas
+
+% Caso recursivo, NO elijo la pieza
+kPiezasAux(K, [X|XS], [_|PS]) :- 
+    length(PS, LPS), % Poda si no quedan suficientes piezas
     LPS >= K,
     kPiezasAux(K, [X|XS], PS).
 
@@ -83,10 +94,10 @@ kPiezasAux(K, [X|XS], [_|PS]) :- % Caso recursivo, NO elijo la pieza
 seccionTablero(T, ALTO, ANCHO, (I,J), ST) :-
     tamano(T, F, C),
     Im1 is I - 1,
-    Jm1 is J - 1,                    % Obtenemos filas y columnas
-    F >= ALTO + Im1,                 % Tiene que haber sufiecientes filas
-    C >= ANCHO + Jm1,                % Tiene que haber sufiecientes columnas
-    sublista(Im1, ALTO, T, X),       %  Me quedo con las ALTO filas a partir de i
+    Jm1 is J - 1,                     % Obtenemos filas y columnas
+    F >= ALTO + Im1,                  % Tiene que haber suficientes filas
+    C >= ANCHO + Jm1,                 % Tiene que haber suficientes columnas
+    sublista(Im1, ALTO, T, X),        %  Me quedo con las ALTO filas a partir de i
     recortarFilas(Jm1, ANCHO, X, ST). % Me quedo con las ANCHO columnas a partir de j
 
 recortarFilas(_, _, [], []).
@@ -102,25 +113,14 @@ ubicarPieza(Tablero, ID) :-
     tamano(Pieza, FilasP, ColP),
     tamano(Tablero, FilasT, ColT),
     coordenadas(Tablero, (I, J)),
-    I + FilasP - 1=< FilasT,
-    J + ColP - 1 =< ColT,
+    coordenadaPiezaEnRango(I, FilasT, FilasP),
+    coordenadaPiezaEnRango(J, ColT, ColP),
     seccionTablero(Tablero, FilasP, ColP, (I,J), Seccion),
-    puedeColocar(Pieza, Seccion, ID).
+    Pieza = Seccion.
 
-puedeColocar([], [], _).
-puedeColocar([P|PS], [S|SS], ID):-
-    coincideFila(P, S, ID),
-    puedeColocar(PS, SS, ID).
-
-coincideFila([], [], _).
-coincideFila([P|PS], [S|SS], ID):-
-    nonvar(P),
-    var(S),
-    S = ID,
-    coincideFila(PS, SS, ID).
-coincideFila([P|PS], [_|SS], ID):-
-    var(P),
-    coincideFila(PS, SS, ID).
+coordenadaPiezaEnRango(Coordenada, TamanoTablero, TamanoPieza):-
+    LimiteMax is TamanoTablero - TamanoPieza + 1,
+    Coordenada =< LimiteMax.
 
 % Ejercicio 8: Ubicar piezas
 % ubicarPiezas(+Tablero, +Poda, +Identificadores)

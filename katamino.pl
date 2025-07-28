@@ -39,8 +39,7 @@ tantos elementos como se indica de L.
 
 % Ejercicio 2: Tablero
 %! tablero(+K, -T)
-tablero(K, [A,B,C,D,E]) :-
-    K > 0,
+tablero(K, [A, B, C, D, E]) :-
     length(A, K),
     length(B, K),
     length(C, K),
@@ -67,43 +66,43 @@ coordenadas(T, (I, J)) :-
 % kPiezas(+K, -PS)
 kPiezas(K, XS) :-
     nombrePiezas(P), 
-    kPiezasAux(K, XS, P).
+    elegirKPiezas(K, XS, P).
 
-% kPiezasAux(+K, -PS, +PRestantes)
+% elegirKPiezas(+K, -PS, +PRestantes)
 
 % Caso base K == 0
-kPiezasAux(0,[], _). 
+elegirKPiezas(0,[], _). 
 
 % Caso recursivo, elijo la pieza
-kPiezasAux(K, [P|XS], [P|PS]) :- 
+elegirKPiezas(K, [P|XS], [P|PS]) :- 
     Km1 is K - 1,
-    length(XS, Km1),
     length(PS, LPS), % Poda si no quedan suficientes piezas
     LPS >= Km1,
-    kPiezasAux(Km1, XS, PS).
+elegirKPiezas(Km1, XS, PS).
 
 % Caso recursivo, NO elijo la pieza
-kPiezasAux(K, [X|XS], [_|PS]) :- 
+elegirKPiezas(K, [X|XS], [_|PS]) :- 
     length(PS, LPS), % Poda si no quedan suficientes piezas
     LPS >= K,
-    kPiezasAux(K, [X|XS], PS).
+elegirKPiezas(K, [X|XS], PS).
 
 
 % Ejercicio 6: SeccionTablero
 % seccionTablero(+T, +ALTO, +ANCHO, +IJ, ?ST)
-seccionTablero(T, ALTO, ANCHO, (I,J), ST) :-
-    tamano(T, F, C),
+seccionTablero(Tablero, ALTO, ANCHO, (I,J), ST) :-
+    tamano(Tablero, F, C),
     Im1 is I - 1,
     Jm1 is J - 1,                     % Obtenemos filas y columnas
     F >= ALTO + Im1,                  % Tiene que haber suficientes filas
     C >= ANCHO + Jm1,                 % Tiene que haber suficientes columnas
-    sublista(Im1, ALTO, T, X),        %  Me quedo con las ALTO filas a partir de i
-    recortarFilas(Jm1, ANCHO, X, ST). % Me quedo con las ANCHO columnas a partir de j
+    sublista(Im1, ALTO, Tablero, RecorteFilas),  % Me quedo con las ALTO filas a partir de i
+    recortarColumnas(Jm1, ANCHO, RecorteFilas, ST). % Me quedo con las ANCHO columnas a partir de j
 
-recortarFilas(_, _, [], []).
-recortarFilas(J, ANCHO, [H|T], [H1|T1]) :-
-    sublista(J, ANCHO, H, H1),
-    recortarFilas(J, ANCHO, T, T1).
+% recortarColumnas(+J, +ANCHO, +Tablero, -Seccion)
+recortarColumnas(_, _, [], []).
+recortarColumnas(Descartar, Tomar, [H1|T1], [H2|T2]) :-
+    sublista(Descartar, Tomar, H1, H2),
+    recortarColumnas(Descartar, Tomar, T1, T2).
 
 
 % Ejercicio 7: Ubicar pieza
@@ -171,15 +170,21 @@ N = 856.
 
 % todosGruposLibresModulo5(+Tablero)
 todosGruposLibresModulo5(Tablero):-
-    findall(IJ, (coordenadas(Tablero, IJ), casillaLibre(IJ, Tablero)), Coordenadas),
+    coordenadasLibres(Tablero, Coordenadas),
     agrupar(Coordenadas, Grupos),
-    forall(member(Grupo, Grupos), tamanoMod5(Grupo)).
+    tamanoGruposModulo5(Grupos).
+
+% coordenadasLibres(+Tablero, -Coordenadas)
+coordenadasLibres(Tablero, Coordenadas):- findall(IJ, (coordenadas(Tablero, IJ), casillaLibre(IJ, Tablero)), Coordenadas).
 
 % casillaLibre(+IJ, +Tablero)
 casillaLibre((I, J), Tablero):-
     nth1(I, Tablero, Fila),
     nth1(J, Fila, Casilla),
     var(Casilla).
+
+% tamanoGruposModulo5(+Grupos)
+tamanoGruposModulo5(Grupos):- forall(member(Grupo, Grupos), tamanoMod5(Grupo)).
 
 % tamanoMod5(Grupo)
 tamanoMod5(Grupo):-
